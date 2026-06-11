@@ -48,6 +48,7 @@ const stateCopy: Record<TripStage, { title: string; detail: string; cta: string 
 const activeTripSafeTargets: Screen[] = ['activeTrip', 'shareTrip', 'driverVerification', 'reportIssue', 'completed', 'receipt'];
 const issueTypes = ['Safety concern', 'Wrong route', 'Payment issue', 'Driver behavior', 'Lost item', 'App problem'];
 const alertTypes = ['Live trip sharing enabled', 'SOS alerts enabled', 'Always ask first'];
+const feedbackOptions = ['Safe driving', 'Clean car', 'Polite driver', 'Fast pickup', 'Smooth route', 'Helpful driver'];
 
 export default function App() {
   const [screen, setScreen] = useState<Screen>('splash');
@@ -62,6 +63,7 @@ export default function App() {
   const [exitTarget, setExitTarget] = useState<Screen | null>(null);
   const [toast, setToast] = useState<string | null>(null);
   const [rating, setRating] = useState(0);
+  const [feedbackTags, setFeedbackTags] = useState<string[]>([]);
   const [trustedContacts, setTrustedContacts] = useState<TrustedContact[]>([
     { name: 'Mom', phone: '+63 917 000 4100', alert: 'Live trip sharing enabled' },
     { name: 'Brother', phone: '+63 918 555 2200', alert: 'SOS alerts enabled' },
@@ -171,6 +173,41 @@ export default function App() {
     pushScreen(target);
   }
 
+  function resetPostTripState() {
+    setRating(0);
+    setFeedbackTags([]);
+    setShareStatus('idle');
+    setTicketCreated(false);
+    setIssueDetails('');
+    setSelectedIssue(issueTypes[0]);
+  }
+
+  function rebookSameTrip() {
+    resetPostTripState();
+    setTripStage('idle');
+    notify('Same route loaded for rebooking');
+    pushScreen('choose');
+  }
+
+  function returnHomeAfterTrip() {
+    resetPostTripState();
+    setTripStage('idle');
+    notify('Returned to Home');
+    pushScreen('home');
+  }
+
+  function toggleFeedbackTag(tag: string) {
+    setFeedbackTags((tags) => tags.includes(tag) ? tags.filter((item) => item !== tag) : [...tags, tag]);
+  }
+
+  function saveRating() {
+    if (!rating) {
+      notify('Choose a star rating first');
+      return;
+    }
+    notify(`Rating saved: ${rating} star${rating > 1 ? 's' : ''}`);
+  }
+
   function addTrustedContact() {
     if (!contactName.trim() || !contactPhone.trim()) return;
     setTrustedContacts((contacts) => [...contacts, { name: contactName.trim(), phone: contactPhone.trim(), alert: contactAlert }]);
@@ -197,8 +234,8 @@ export default function App() {
       {screen === 'search' && <Search go={go} back={back} />}
       {screen === 'choose' && <ChooseRide back={back} selectedRide={selectedRide} setSelectedRide={setSelectedRide} pickupInstruction={pickupInstruction} setPickupInstruction={setPickupInstruction} paymentMethod={paymentMethod} setPaymentMethod={setPaymentMethod} beginTrip={beginTrip} />}
       {screen === 'activeTrip' && <ActiveTrip go={go} open={open} tripStage={tripStage} selectedRide={selectedRide} pickupInstruction={pickupInstruction} paymentMethod={paymentMethod} nextTripStep={nextTripStep} cancelTrip={cancelTrip} />}
-      {screen === 'completed' && <Completed go={go} rating={rating} setRating={setRating} />}
-      {screen === 'receipt' && <Receipt go={go} back={back} open={open} selectedRide={selectedRide} paymentMethod={paymentMethod} />}
+      {screen === 'completed' && <Completed go={go} rating={rating} setRating={setRating} feedbackTags={feedbackTags} toggleFeedbackTag={toggleFeedbackTag} saveRating={saveRating} rebookTrip={rebookSameTrip} returnHome={returnHomeAfterTrip} />}
+      {screen === 'receipt' && <Receipt go={go} back={back} open={open} selectedRide={selectedRide} paymentMethod={paymentMethod} rebookTrip={rebookSameTrip} returnHome={returnHomeAfterTrip} />}
       {screen === 'trips' && <Trips go={go} />}
       {screen === 'balance' && <Balance open={open} />}
       {screen === 'safety' && <Safety go={go} open={open} trustedContacts={trustedContacts} />}
@@ -254,12 +291,12 @@ function ActiveTrip({ go, open, tripStage, selectedRide, pickupInstruction, paym
   return <section className="screen app-screen map-screen active"><div className="status-card elevated"><b>{copy.title}</b><span>{tripStageLabels[tripStage]}</span><small>{copy.detail}</small></div><div className="map-panel full"><RouteMap stage={tripStage} /></div><div className="sheet compact emotional"><div className="progress-rail">{tripTimeline.map((stage) => <span key={stage} className={stageIndex(stage) <= stageIndex(tripStage) ? 'done' : ''} />)}</div><div className="trip-stage"><b>{copy.title}</b><span>{copy.detail}</span></div><DriverCard compact /><div className="pin"><span>Your Ride PIN</span><b>4821</b></div><div className="trip-facts"><div><b>Pickup</b><span>{pickupInstruction}</span></div><div><b>Payment</b><span>{paymentMethod.label}</span></div></div><div className="actions"><button onClick={() => go('shareTrip')}>Share Trip</button><button onClick={() => open('Message driver', 'Production will open masked in-app chat/call with safety logging.')}>Message</button><button className="danger" onClick={() => open('Emergency SOS confirmation', 'Demo only — no emergency call is placed. Production would ask for confirmation, notify trusted contacts, share live location, and attach trip context to Hatid Safety.')}>Emergency</button></div><div className="split-actions"><button className="secondary" onClick={cancelTrip}>Cancel ride</button><button className="primary" onClick={nextTripStep}>{copy.cta}</button></div><button className="link center" onClick={() => go('driverVerification')}>View driver verification</button><small className="microcopy">{selectedRide.label} • {selectedRide.fare} • Trip PIN required before boarding.</small></div></section>;
 }
 
-function Completed({ go, rating, setRating }: { go: (screen: Screen) => void; rating: number; setRating: (value: number) => void }) {
-  return <section className="screen auth completed active"><div className="success">✓</div><h1>You've arrived.</h1><p>Rate Juan and help keep Hatid safe.</p><DriverCard compact /><div className="stars">{[1, 2, 3, 4, 5].map((star) => <button key={star} onClick={() => setRating(star)}>{star <= rating ? '★' : '☆'}</button>)}</div>{rating > 0 && <div className="chip-grid"><button>Clean car</button><button>Safe driving</button><button>Polite driver</button><button>Fast pickup</button><button>Wrong route</button><button>Unsafe driving</button></div>}<button className="primary" onClick={() => go('receipt')}>View receipt</button><button className="secondary" onClick={() => go('reportIssue')}>Report issue</button></section>;
+function Completed({ go, rating, setRating, feedbackTags, toggleFeedbackTag, saveRating, rebookTrip, returnHome }: { go: (screen: Screen) => void; rating: number; setRating: (value: number) => void; feedbackTags: string[]; toggleFeedbackTag: (tag: string) => void; saveRating: () => void; rebookTrip: () => void; returnHome: () => void }) {
+  return <section className="screen auth completed active phase8-completed"><div className="success">✓</div><h1>You've arrived.</h1><p>Rate Juan and choose what went well. Then continue to receipt, rebook, or return home.</p><DriverCard compact /><div className="stars phase8-stars">{[1, 2, 3, 4, 5].map((star) => <button key={star} aria-label={`Rate ${star} star${star > 1 ? 's' : ''}`} className={star <= rating ? 'selected' : ''} onClick={() => setRating(star)}>{star <= rating ? '★' : '☆'}</button>)}</div>{rating > 0 && <div className="chip-grid phase8-feedback">{feedbackOptions.map((tag) => <button key={tag} className={feedbackTags.includes(tag) ? 'active' : ''} onClick={() => toggleFeedbackTag(tag)}>{tag}</button>)}</div>}<div className="completion-actions"><button className="primary" disabled={!rating} onClick={saveRating}>{rating ? 'Save rating' : 'Choose rating'}</button><button className="secondary" onClick={() => go('receipt')}>View receipt</button><button className="secondary" onClick={rebookTrip}>Rebook same trip</button><button className="link center" onClick={returnHome}>Return Home</button><button className="link center danger-link" onClick={() => go('reportIssue')}>Report issue</button></div></section>;
 }
 
-function Receipt({ go, back, open, selectedRide, paymentMethod }: { go: (screen: Screen) => void; back: () => void; open: (title: string, message: string) => void; selectedRide: (typeof rideOptions)[number]; paymentMethod: (typeof paymentMethods)[number] }) {
-  return <section className="screen app-screen active"><Topbar title="Trip receipt" back={back} /><div className="content scroll"><div className="receipt elevated"><p>Total paid</p><h2>₱212.00</h2><small>June 11, 2026 • HTD-98213-AB29</small><hr />{fareBreakdown.map(([label, value]) => <div key={label}><span>{label}</span><b>{value}</b></div>)}<div><span>Prototype fare adjustment</span><b>₱40.00</b></div><hr /><div><span>Ride type</span><b>{selectedRide.label}</b></div><div><span>Driver</span><b>{driver.name}</b></div><div><span>Route</span><b>Salcedo → BGC High Street</b></div><div><span>Payment</span><b>{paymentMethod.label}</b></div></div><button className="secondary" onClick={() => open('Download receipt', 'Production will create a PDF receipt and email copy.')}>Download / Share receipt</button><button className="secondary" onClick={() => go('reportIssue')}>Report issue</button></div></section>;
+function Receipt({ go, back, open, selectedRide, paymentMethod, rebookTrip, returnHome }: { go: (screen: Screen) => void; back: () => void; open: (title: string, message: string) => void; selectedRide: (typeof rideOptions)[number]; paymentMethod: (typeof paymentMethods)[number]; rebookTrip: () => void; returnHome: () => void }) {
+  return <section className="screen app-screen active"><Topbar title="Trip receipt" back={back} /><div className="content scroll"><div className="receipt elevated"><p>Total paid</p><h2>₱212.00</h2><small>June 11, 2026 • HTD-98213-AB29</small><hr />{fareBreakdown.map(([label, value]) => <div key={label}><span>{label}</span><b>{value}</b></div>)}<div><span>Prototype fare adjustment</span><b>₱40.00</b></div><hr /><div><span>Ride type</span><b>{selectedRide.label}</b></div><div><span>Driver</span><b>{driver.name}</b></div><div><span>Route</span><b>Salcedo → BGC High Street</b></div><div><span>Payment</span><b>{paymentMethod.label}</b></div></div><div className="receipt-actions"><button className="secondary" onClick={() => open('Download receipt', 'Production will create a PDF receipt and email copy.')}>Download / Share receipt</button><button className="primary" onClick={rebookTrip}>Rebook same trip</button><button className="secondary" onClick={() => go('trips')}>Back to trips</button><button className="secondary" onClick={returnHome}>Return Home</button><button className="link center danger-link" onClick={() => go('reportIssue')}>Report issue</button></div></div></section>;
 }
 
 function Trips({ go }: { go: (screen: Screen) => void }) {
@@ -275,7 +312,7 @@ function Safety({ go, open, trustedContacts }: { go: (screen: Screen) => void; o
 }
 
 function Account({ go, open }: { go: (screen: Screen) => void; open: (title: string, message: string) => void }) {
-  return <section className="screen app-screen active"><Topbar title="Account" /><div className="content scroll"><div className="profile-card"><div className="driver-photo-v2">MS</div><div><h2>Maria Santos</h2><p>+63 968 184 1001</p><span>KYC Verified</span></div></div><button className="list-row" onClick={() => open('Edit profile', 'Edit profile flow placeholder.')}>Edit profile</button><button className="list-row" onClick={() => go('trustedContacts')}>Trusted contacts</button><button className="list-row" onClick={() => go('terms')}>Terms & Privacy</button><button className="list-row" onClick={() => open('Delete account', 'Production will require identity confirmation and data retention notice.')}>Delete account</button><button className="list-row" onClick={() => open('App version', 'Hatid preview v0.8.0 phase 5 premium visual pass.')}>App version</button></div></section>;
+  return <section className="screen app-screen active"><Topbar title="Account" /><div className="content scroll"><div className="profile-card"><div className="driver-photo-v2">MS</div><div><h2>Maria Santos</h2><p>+63 968 184 1001</p><span>KYC Verified</span></div></div><button className="list-row" onClick={() => open('Edit profile', 'Edit profile flow placeholder.')}>Edit profile</button><button className="list-row" onClick={() => go('trustedContacts')}>Trusted contacts</button><button className="list-row" onClick={() => go('terms')}>Terms & Privacy</button><button className="list-row" onClick={() => open('Delete account', 'Production will require identity confirmation and data retention notice.')}>Delete account</button><button className="list-row" onClick={() => open('App version', 'Hatid preview v0.8.1 phase 8A completed-trip loop.')}>App version</button></div></section>;
 }
 
 function TrustedContacts({ back, contacts, name, phone, alert, setName, setPhone, setAlert, addContact }: { back: () => void; contacts: TrustedContact[]; name: string; phone: string; alert: string; setName: (value: string) => void; setPhone: (value: string) => void; setAlert: (value: string) => void; addContact: () => void }) {
