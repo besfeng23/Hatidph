@@ -1,0 +1,19 @@
+{
+  "name": "Hatid - Premium Mobility",
+  "short_name": "Hatid",
+  "description": "Biyahe natin. Bansa natin. Premium rides, motos, XL, and padala for Philippine roads.",
+  "start_url": "/",
+  "scope": "/",
+  "display": "standalone",
+  "background_color": "#0F172A",
+  "theme_color": "#0033CC",
+  "orientation": "portrait",
+  "icons": [
+    {
+      "src": "/favicon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any maskable"
+    }
+  ]
+}
