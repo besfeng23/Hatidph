@@ -30,6 +30,9 @@ export type Screen =
   | 'terms'
   | 'safetyGuide';
 
+type TrustedContact = { name: string; phone: string; alert: string };
+type ShareStatus = 'idle' | 'generated' | 'copied' | 'sent';
+
 const stateCopy: Record<TripStage, { title: string; detail: string; cta: string }> = {
   idle: { title: 'Ready to book', detail: 'Choose a ride to begin the Makati/BGC pilot simulation.', cta: 'Start search' },
   searching: { title: 'Searching nearby drivers', detail: 'Checking driver availability and matching plate-verified vehicles around Salcedo.', cta: 'Assign driver' },
@@ -43,6 +46,8 @@ const stateCopy: Record<TripStage, { title: string; detail: string; cta: string 
 };
 
 const activeTripSafeTargets: Screen[] = ['activeTrip', 'shareTrip', 'driverVerification', 'reportIssue', 'completed', 'receipt'];
+const issueTypes = ['Safety concern', 'Wrong route', 'Payment issue', 'Driver behavior', 'Lost item', 'App problem'];
+const alertTypes = ['Live trip sharing enabled', 'SOS alerts enabled', 'Always ask first'];
 
 export default function App() {
   const [screen, setScreen] = useState<Screen>('splash');
@@ -56,6 +61,17 @@ export default function App() {
   const [modal, setModal] = useState<{ title: string; message: string } | null>(null);
   const [exitTarget, setExitTarget] = useState<Screen | null>(null);
   const [rating, setRating] = useState(0);
+  const [trustedContacts, setTrustedContacts] = useState<TrustedContact[]>([
+    { name: 'Mom', phone: '+63 917 000 4100', alert: 'Live trip sharing enabled' },
+    { name: 'Brother', phone: '+63 918 555 2200', alert: 'SOS alerts enabled' },
+  ]);
+  const [contactName, setContactName] = useState('');
+  const [contactPhone, setContactPhone] = useState('');
+  const [contactAlert, setContactAlert] = useState(alertTypes[0]);
+  const [shareStatus, setShareStatus] = useState<ShareStatus>('idle');
+  const [selectedIssue, setSelectedIssue] = useState(issueTypes[0]);
+  const [issueDetails, setIssueDetails] = useState('');
+  const [ticketCreated, setTicketCreated] = useState(false);
 
   const normalizedPhone = useMemo(() => normalizePhone(phone), [phone]);
   const phoneValid = /^9\d{9}$/.test(normalizedPhone);
@@ -144,6 +160,20 @@ export default function App() {
     pushScreen(target);
   }
 
+  function addTrustedContact() {
+    if (!contactName.trim() || !contactPhone.trim()) return;
+    setTrustedContacts((contacts) => [...contacts, { name: contactName.trim(), phone: contactPhone.trim(), alert: contactAlert }]);
+    setContactName('');
+    setContactPhone('');
+    setContactAlert(alertTypes[0]);
+    open('Trusted contact added', 'This contact is now available for live trip sharing and SOS alerts in the pilot preview.');
+  }
+
+  function createTicket() {
+    setTicketCreated(true);
+    open('Support ticket created', `Reference HTD-SUP-1028 created for ${selectedIssue}. Trip context, route, driver, plate, and receipt were attached in the preview.`);
+  }
+
   return (
     <PhoneShell>
       {screen === 'splash' && <Splash go={go} />}
@@ -159,11 +189,11 @@ export default function App() {
       {screen === 'receipt' && <Receipt go={go} back={back} open={open} selectedRide={selectedRide} paymentMethod={paymentMethod} />}
       {screen === 'trips' && <Trips go={go} />}
       {screen === 'balance' && <Balance open={open} />}
-      {screen === 'safety' && <Safety go={go} open={open} />}
+      {screen === 'safety' && <Safety go={go} open={open} trustedContacts={trustedContacts} />}
       {screen === 'account' && <Account go={go} open={open} />}
-      {screen === 'trustedContacts' && <TrustedContacts back={back} />}
-      {screen === 'shareTrip' && <ShareTrip back={back} />}
-      {screen === 'reportIssue' && <ReportIssue back={back} />}
+      {screen === 'trustedContacts' && <TrustedContacts back={back} contacts={trustedContacts} name={contactName} phone={contactPhone} alert={contactAlert} setName={setContactName} setPhone={setContactPhone} setAlert={setContactAlert} addContact={addTrustedContact} />}
+      {screen === 'shareTrip' && <ShareTrip back={back} contacts={trustedContacts} status={shareStatus} setStatus={setShareStatus} open={open} />}
+      {screen === 'reportIssue' && <ReportIssue back={back} selectedIssue={selectedIssue} setSelectedIssue={setSelectedIssue} details={issueDetails} setDetails={setIssueDetails} ticketCreated={ticketCreated} createTicket={createTicket} />}
       {screen === 'driverVerification' && <DriverVerification back={back} />}
       {screen === 'terms' && <Terms back={back} />}
       {screen === 'safetyGuide' && <SafetyGuide back={back} />}
@@ -208,7 +238,7 @@ function ChooseRide({ back, selectedRide, setSelectedRide, pickupInstruction, se
 
 function ActiveTrip({ go, open, tripStage, selectedRide, pickupInstruction, paymentMethod, nextTripStep, cancelTrip }: { go: (screen: Screen) => void; open: (title: string, message: string) => void; tripStage: TripStage; selectedRide: (typeof rideOptions)[number]; pickupInstruction: string; paymentMethod: (typeof paymentMethods)[number]; nextTripStep: () => void; cancelTrip: () => void }) {
   const copy = stateCopy[tripStage];
-  return <section className="screen app-screen map-screen active"><div className="status-card elevated"><b>{copy.title}</b><span>{tripStageLabels[tripStage]}</span><small>{copy.detail}</small></div><div className="map-panel full"><RouteMap stage={tripStage} /></div><div className="sheet compact emotional"><div className="progress-rail">{tripTimeline.map((stage) => <span key={stage} className={stageIndex(stage) <= stageIndex(tripStage) ? 'done' : ''} />)}</div><div className="trip-stage"><b>{copy.title}</b><span>{copy.detail}</span></div><DriverCard compact /><div className="pin"><span>Your Ride PIN</span><b>4821</b></div><div className="trip-facts"><div><b>Pickup</b><span>{pickupInstruction}</span></div><div><b>Payment</b><span>{paymentMethod.label}</span></div></div><div className="actions"><button onClick={() => go('shareTrip')}>Share Trip</button><button onClick={() => open('Message driver', 'Production will open masked in-app chat/call with safety logging.')}>Message</button><button className="danger" onClick={() => open('Emergency SOS confirmation', 'Demo mode only. Production will confirm before emergency actions and notify trusted contacts when requested.')}>Emergency</button></div><div className="split-actions"><button className="secondary" onClick={cancelTrip}>Cancel ride</button><button className="primary" onClick={nextTripStep}>{copy.cta}</button></div><button className="link center" onClick={() => go('driverVerification')}>View driver verification</button><small className="microcopy">{selectedRide.label} • {selectedRide.fare} • Trip PIN required before boarding.</small></div></section>;
+  return <section className="screen app-screen map-screen active"><div className="status-card elevated"><b>{copy.title}</b><span>{tripStageLabels[tripStage]}</span><small>{copy.detail}</small></div><div className="map-panel full"><RouteMap stage={tripStage} /></div><div className="sheet compact emotional"><div className="progress-rail">{tripTimeline.map((stage) => <span key={stage} className={stageIndex(stage) <= stageIndex(tripStage) ? 'done' : ''} />)}</div><div className="trip-stage"><b>{copy.title}</b><span>{copy.detail}</span></div><DriverCard compact /><div className="pin"><span>Your Ride PIN</span><b>4821</b></div><div className="trip-facts"><div><b>Pickup</b><span>{pickupInstruction}</span></div><div><b>Payment</b><span>{paymentMethod.label}</span></div></div><div className="actions"><button onClick={() => go('shareTrip')}>Share Trip</button><button onClick={() => open('Message driver', 'Production will open masked in-app chat/call with safety logging.')}>Message</button><button className="danger" onClick={() => open('Emergency SOS confirmation', 'Demo only — no emergency call is placed. Production would ask for confirmation, notify trusted contacts, share live location, and attach trip context to Hatid Safety.')}>Emergency</button></div><div className="split-actions"><button className="secondary" onClick={cancelTrip}>Cancel ride</button><button className="primary" onClick={nextTripStep}>{copy.cta}</button></div><button className="link center" onClick={() => go('driverVerification')}>View driver verification</button><small className="microcopy">{selectedRide.label} • {selectedRide.fare} • Trip PIN required before boarding.</small></div></section>;
 }
 
 function Completed({ go, rating, setRating }: { go: (screen: Screen) => void; rating: number; setRating: (value: number) => void }) {
@@ -227,28 +257,29 @@ function Balance({ open }: { open: (title: string, message: string) => void }) {
   return <section className="screen app-screen active"><Topbar title="Hatid Balance" /><div className="content scroll"><div className="balance-hero"><small>Transport credits</small><h2>₱1,250.00</h2><p>Not an e-money wallet. Used only for Hatid rides unless partnered with licensed providers.</p><div><button onClick={() => open('Add ride credits', 'Production will connect GCash, Maya, and approved cash-in partners.')}>Add ride credits</button><button disabled>Send disabled</button></div></div><h3>Payment methods</h3><div className="method"><b>GCash</b><span>Linked backup</span></div><div className="method"><b>Maya</b><span>Coming soon</span></div><div className="method"><b>Cash</b><span>Accepted</span></div><p className="note">Powered by licensed payment partners only when integrations are active. Peer transfer remains disabled until compliance review.</p></div></section>;
 }
 
-function Safety({ go, open }: { go: (screen: Screen) => void; open: (title: string, message: string) => void }) {
-  return <section className="screen app-screen active"><Topbar title="Safety Center" /><div className="content scroll"><div className="sos-card"><h2>Emergency SOS</h2><p>Demo only — no emergency call will be placed. Production requires confirmation before any emergency action.</p><button className="danger" onClick={() => open('Emergency SOS confirmation', 'Demo mode only. Production will confirm, notify trusted contacts, and attach trip context to support.')}>Open SOS confirmation</button></div><button className="list-row" onClick={() => go('trustedContacts')}><b>Trusted contacts</b><small>Set up family or friends for live trip links</small></button><button className="list-row" onClick={() => go('shareTrip')}><b>Share live trip preview</b><small>Preview what contacts receive</small></button><button className="list-row" onClick={() => go('reportIssue')}><b>Report issue</b><small>Safety, route, payment, or driver concern</small></button><button className="list-row" onClick={() => go('driverVerification')}><b>Driver verification</b><small>Plate match, PIN, LTFRB-aware profile</small></button><button className="list-row" onClick={() => go('safetyGuide')}><b>Passenger safety guidelines</b><small>Before boarding, during trip, after arrival</small></button></div></section>;
+function Safety({ go, open, trustedContacts }: { go: (screen: Screen) => void; open: (title: string, message: string) => void; trustedContacts: TrustedContact[] }) {
+  return <section className="screen app-screen active"><Topbar title="Safety Center" /><div className="content scroll"><div className="sos-card"><h2>Emergency SOS</h2><p>Demo only — no emergency call will be placed. Production requires confirmation, live location sharing, and trusted contact notification.</p><button className="danger" onClick={() => open('Emergency SOS confirmation', `Demo mode only. In production this would call emergency support, notify ${trustedContacts.map((c) => c.name).join(' and ')}, share live location, and attach trip HTD-98213-AB29.`)}>Open SOS confirmation</button></div><button className="list-row" onClick={() => go('trustedContacts')}><b>Trusted contacts</b><small>{trustedContacts.length} contacts ready for live trip links and SOS alerts</small></button><button className="list-row" onClick={() => go('shareTrip')}><b>Share live trip preview</b><small>Generate link, copy, or send to family</small></button><button className="list-row" onClick={() => go('reportIssue')}><b>Report issue</b><small>Create a support ticket with trip context</small></button><button className="list-row" onClick={() => go('driverVerification')}><b>Driver verification</b><small>Plate match, PIN, identity, vehicle profile</small></button><button className="list-row" onClick={() => go('safetyGuide')}><b>Passenger safety guidelines</b><small>Before boarding, during trip, after arrival</small></button></div></section>;
 }
 
 function Account({ go, open }: { go: (screen: Screen) => void; open: (title: string, message: string) => void }) {
-  return <section className="screen app-screen active"><Topbar title="Account" /><div className="content scroll"><div className="profile-card"><div className="driver-photo-v2">MS</div><div><h2>Maria Santos</h2><p>+63 968 184 1001</p><span>KYC Verified</span></div></div><button className="list-row" onClick={() => open('Edit profile', 'Edit profile flow placeholder.')}>Edit profile</button><button className="list-row" onClick={() => go('trustedContacts')}>Trusted contacts</button><button className="list-row" onClick={() => go('terms')}>Terms & Privacy</button><button className="list-row" onClick={() => open('Delete account', 'Production will require identity confirmation and data retention notice.')}>Delete account</button><button className="list-row" onClick={() => open('App version', 'Hatid preview v0.6.0 phase 3 booking intelligence.')}>App version</button></div></section>;
+  return <section className="screen app-screen active"><Topbar title="Account" /><div className="content scroll"><div className="profile-card"><div className="driver-photo-v2">MS</div><div><h2>Maria Santos</h2><p>+63 968 184 1001</p><span>KYC Verified</span></div></div><button className="list-row" onClick={() => open('Edit profile', 'Edit profile flow placeholder.')}>Edit profile</button><button className="list-row" onClick={() => go('trustedContacts')}>Trusted contacts</button><button className="list-row" onClick={() => go('terms')}>Terms & Privacy</button><button className="list-row" onClick={() => open('Delete account', 'Production will require identity confirmation and data retention notice.')}>Delete account</button><button className="list-row" onClick={() => open('App version', 'Hatid preview v0.7.0 phase 4 safety actions.')}>App version</button></div></section>;
 }
 
-function TrustedContacts({ back }: { back: () => void }) {
-  return <section className="screen app-screen active"><Topbar title="Trusted contacts" back={back} /><div className="content scroll"><p className="note">Contacts receive trip links only when you choose to share or trigger SOS.</p><div className="contact-card"><b>Mom</b><span>+63 917 000 4100</span><em>Live trip sharing enabled</em></div><div className="contact-card"><b>Brother</b><span>+63 918 555 2200</span><em>SOS alerts enabled</em></div><button className="primary">Add trusted contact</button></div></section>;
+function TrustedContacts({ back, contacts, name, phone, alert, setName, setPhone, setAlert, addContact }: { back: () => void; contacts: TrustedContact[]; name: string; phone: string; alert: string; setName: (value: string) => void; setPhone: (value: string) => void; setAlert: (value: string) => void; addContact: () => void }) {
+  return <section className="screen app-screen active"><Topbar title="Trusted contacts" back={back} /><div className="content scroll"><p className="note">Contacts receive trip links only when you choose to share or trigger SOS.</p>{contacts.map((contact) => <div className="contact-card" key={`${contact.name}-${contact.phone}`}><b>{contact.name}</b><span>{contact.phone}</span><em>{contact.alert}</em></div>)}<section className="booking-card"><div className="section-head"><b>Add trusted contact</b><span>Preview only</span></div><label className="field">Name<input value={name} onChange={(event) => setName(event.target.value)} placeholder="Ate, Mom, Brother" /></label><label className="field">Phone<input value={phone} onChange={(event) => setPhone(event.target.value)} placeholder="+63 9XX XXX XXXX" /></label><div className="choice-row">{alertTypes.map((item) => <button key={item} className={alert === item ? 'choice active' : 'choice'} onClick={() => setAlert(item)}>{item}</button>)}</div><button className="primary" disabled={!name.trim() || !phone.trim()} onClick={addContact}>Add trusted contact</button></section></div></section>;
 }
 
-function ShareTrip({ back }: { back: () => void }) {
-  return <section className="screen app-screen active"><Topbar title="Share live trip" back={back} /><div className="content scroll share-trip-content"><RouteMap stage="arriving" compact /><div className="share-card"><b>Live trip preview</b><span>Maria is riding with Juan Dela Cruz in Toyota Vios ABC-1234.</span><small>Pickup: Salcedo Village • Dropoff: BGC High Street • ETA 18 min</small></div><button className="primary">Generate secure trip link</button><button className="secondary">Send to trusted contacts</button></div></section>;
+function ShareTrip({ back, contacts, status, setStatus, open }: { back: () => void; contacts: TrustedContact[]; status: ShareStatus; setStatus: (value: ShareStatus) => void; open: (title: string, message: string) => void }) {
+  const link = 'hatid.ph/t/HTD-98213-AB29';
+  return <section className="screen app-screen active"><Topbar title="Share live trip" back={back} /><div className="content scroll share-trip-content"><RouteMap stage="arriving" compact /><div className="share-card"><b>Live trip preview</b><span>Maria is riding with {driver.name} in {driver.color} {driver.vehicle} {driver.plate}.</span><small>Pickup: {places.pickupDetail} • Dropoff: {places.destinationDetail} • ETA 18 min</small></div>{status !== 'idle' && <div className="note"><b>{status === 'generated' ? 'Secure link generated' : status === 'copied' ? 'Secure link copied' : 'Trip sent to trusted contacts'}</b><br />{link}</div>}<button className="primary" onClick={() => { setStatus('generated'); open('Secure trip link generated', 'A secure preview link was generated for this active trip.'); }}>Generate secure trip link</button><button className="secondary" onClick={() => { setStatus('copied'); open('Trip link copied', link); }}>Copy secure link</button><button className="secondary" onClick={() => { setStatus('sent'); open('Trip shared', `Sent to ${contacts.map((c) => c.name).join(', ')}.`); }}>Send to trusted contacts</button><h3>Recipients</h3>{contacts.map((contact) => <div className="contact-card" key={contact.phone}><b>{contact.name}</b><span>{contact.phone}</span><em>{contact.alert}</em></div>)}</div></section>;
 }
 
-function ReportIssue({ back }: { back: () => void }) {
-  return <section className="screen app-screen active"><Topbar title="Report issue" back={back} /><div className="content scroll"><p className="note">Trip context, driver, route, plate, and receipt can be attached to the support ticket.</p>{['Safety concern', 'Wrong route', 'Payment issue', 'Driver behavior', 'Lost item', 'App problem'].map((item) => <button key={item} className="list-row"><b>{item}</b><small>Attach trip HTD-98213-AB29</small></button>)}<button className="primary">Create support ticket</button></div></section>;
+function ReportIssue({ back, selectedIssue, setSelectedIssue, details, setDetails, ticketCreated, createTicket }: { back: () => void; selectedIssue: string; setSelectedIssue: (value: string) => void; details: string; setDetails: (value: string) => void; ticketCreated: boolean; createTicket: () => void }) {
+  return <section className="screen app-screen active"><Topbar title="Report issue" back={back} /><div className="content scroll"><p className="note">Trip context, driver, route, plate, and receipt can be attached to the support ticket.</p>{ticketCreated && <div className="sos-card"><h2>Ticket created</h2><p>Reference HTD-SUP-1028 • {selectedIssue} • Trip HTD-98213-AB29 attached.</p></div>}<h3>Issue type</h3>{issueTypes.map((item) => <button key={item} className={selectedIssue === item ? 'list-row selected' : 'list-row'} onClick={() => setSelectedIssue(item)}><b>{item}</b><small>Attach trip HTD-98213-AB29</small></button>)}<label className="field">What happened?<textarea value={details} onChange={(event) => setDetails(event.target.value)} placeholder="Describe what happened. Include location, time, and safety concern if needed." rows={4} /></label><button className="primary" onClick={createTicket}>Create support ticket</button></div></section>;
 }
 
 function DriverVerification({ back }: { back: () => void }) {
-  return <section className="screen app-screen active"><Topbar title="Driver verification" back={back} /><div className="content scroll"><DriverCard /><div className="verify-grid"><div><b>Plate matched</b><span>{driver.plate}</span></div><div><b>Trip PIN required</b><span>4821</span></div><div><b>Profile</b><span>Identity verified</span></div><div><b>Safety status</b><span>Good standing</span></div></div><p className="note">Always confirm the plate and driver before boarding. Do not share your PIN until you are inside the correct vehicle.</p></div></section>;
+  return <section className="screen app-screen active"><Topbar title="Driver verification" back={back} /><div className="content scroll"><DriverCard /><div className="verify-grid"><div><b>Plate matched</b><span>{driver.plate}</span></div><div><b>Trip PIN required</b><span>4821</span></div><div><b>Identity</b><span>{driver.verificationId}</span></div><div><b>Safety status</b><span>{driver.safetyStatus}</span></div></div><div className="note"><b>Before boarding checklist</b><br />Confirm plate {driver.plate}, vehicle color {driver.color}, driver name {driver.name}, and do not share the PIN until inside the correct vehicle.</div><div className="contact-card"><b>Vehicle profile</b><span>{driver.color} {driver.vehicle}</span><em>Good standing</em></div><div className="contact-card"><b>Safety audit</b><span>Identity verified • Plate matched • Trip PIN required</span><em>Passed today</em></div></div></section>;
 }
 
 function Terms({ back }: { back: () => void }) {
@@ -256,7 +287,7 @@ function Terms({ back }: { back: () => void }) {
 }
 
 function SafetyGuide({ back }: { back: () => void }) {
-  return <section className="screen app-screen active"><Topbar title="Passenger safety" back={back} /><div className="content scroll legal"><h3>Before boarding</h3><p>Check plate, driver name, vehicle color, and trip PIN.</p><h3>During trip</h3><p>Share your live trip with trusted contacts and report route concerns immediately.</p><h3>After arrival</h3><p>Rate the trip and report any safety or payment issue from the receipt.</p></div></section>;
+  return <section className="screen app-screen active"><Topbar title="Passenger safety" back={back} /><div className="content scroll legal"><div className="note"><b>Before boarding</b><br />Check plate, driver name, vehicle color, and Ride PIN. Meet at the selected pickup instruction, like lobby entrance or guardhouse.</div><div className="note"><b>During trip</b><br />Share your live trip with trusted contacts, keep route visible, and report wrong route or unsafe driving immediately.</div><div className="note"><b>After arrival</b><br />Check your receipt, rate the trip, report lost items or safety issues, and save frequent pickup points.</div><h3>Safety reminders</h3><button className="list-row"><b>Never board a mismatched plate</b><small>Cancel and report immediately if plate or vehicle is different.</small></button><button className="list-row"><b>Use trusted contacts</b><small>Share trips with family for late-night, airport, or unfamiliar routes.</small></button><button className="list-row"><b>Use SOS only when needed</b><small>Production mode would notify emergency and Hatid Safety after confirmation.</small></button></div></section>;
 }
 
 function Topbar({ title, subtitle, back, action }: { title: string; subtitle?: string; back?: () => void; action?: () => void }) {
