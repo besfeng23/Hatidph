@@ -32,11 +32,12 @@ export type Screen =
 
 const stateCopy: Record<TripStage, { title: string; detail: string; cta: string }> = {
   idle: { title: 'Ready to book', detail: 'Choose a ride to begin the Makati/BGC pilot simulation.', cta: 'Start search' },
-  searching: { title: 'Searching for nearby drivers', detail: 'Checking verified drivers around Salcedo, Ayala Ave, and BGC.', cta: 'Assign driver' },
-  assigned: { title: 'Driver assigned', detail: `${driver.name} accepted your booking and is confirming plate match.`, cta: 'Driver arriving' },
-  arriving: { title: 'Driver arriving', detail: `${driver.name} is ${driver.distance}. Keep your Ride PIN ready.`, cta: 'Driver arrived' },
-  arrived: { title: 'Driver arrived', detail: 'Meet your driver at Salcedo Village entrance. Confirm the plate before boarding.', cta: 'Start trip' },
-  in_trip: { title: 'In trip', detail: 'Live route is shared with trusted contacts. Destination: BGC High Street.', cta: 'Complete trip' },
+  searching: { title: 'Searching nearby drivers', detail: 'Checking driver availability and matching plate-verified vehicles around Salcedo.', cta: 'Assign driver' },
+  assigned: { title: 'Driver assigned', detail: `${driver.name} accepted your booking. Plate ${driver.plate} is ready for match check.`, cta: 'Driver arriving' },
+  arriving: { title: 'Kuya Juan is arriving', detail: `${driver.name} is ${driver.distance}. Meet at Salcedo Village lobby entrance.`, cta: 'Driver arrived' },
+  arrived: { title: 'Driver has arrived', detail: `Confirm ${driver.plate} before boarding. Share your PIN only inside the correct vehicle.`, cta: 'Start trip demo' },
+  in_trip: { title: 'Trip in progress', detail: 'Live trip is shared with Mom. ETA 18 min via Ayala Ave toward BGC High Street.', cta: 'Arriving soon' },
+  arriving_soon: { title: 'Arriving soon', detail: 'Prepare to exit safely at BGC High Street drop-off bay.', cta: 'Complete trip' },
   completed: { title: 'Trip completed', detail: 'You arrived safely. Review your receipt and rate the trip.', cta: 'View receipt' },
   cancelled: { title: 'Trip cancelled', detail: 'No charge in this prototype. Cancellation reasons are captured for operations.', cta: 'Book again' },
 };
@@ -119,7 +120,8 @@ export default function App() {
     if (tripStage === 'completed') return go('completed');
     if (tripStage === 'cancelled') return go('choose');
     if (tripStage === 'arrived') return setTripStage('in_trip');
-    if (tripStage === 'in_trip') {
+    if (tripStage === 'in_trip') return setTripStage('arriving_soon');
+    if (tripStage === 'arriving_soon') {
       setTripStage('completed');
       return go('completed');
     }
