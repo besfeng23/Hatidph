@@ -1,0 +1,40 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, viewport-fit=cover" />
+    <title>Hatid - Premium Mobility</title>
+    <meta name="description" content="Hatid passenger app preview for Philippine mobility." />
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet" />
+    <link rel="stylesheet" href="./styles.css" />
+  </head>
+  <body>
+    <main class="shell">
+      <section class="phone">
+        <div class="notch"></div>
+        <section id="splash" class="screen splash active">
+          <div class="logo-block"><strong>Hatid</strong><span>Biyahe natin. Bansa natin.</span></div>
+          <div class="card"><h1>Welcome.</h1><p>Your reliable Philippine mobility partner.</p><button data-go="login">Get Started</button></div>
+        </section>
+        <section id="login" class="screen page"><button data-go="splash" class="back">←</button><h1>Enter your mobile number</h1><p>We'll send you a secure code to verify your account.</p><label class="phone-input"><span>🇵🇭 +63</span><input id="phone" maxlength="10" placeholder="9XX XXX XXXX" /></label><button id="to-otp" data-go="otp" disabled>Continue</button></section>
+        <section id="otp" class="screen page"><button data-go="login" class="back">←</button><h1>Verify Number</h1><p>Enter the 6-digit code sent to your phone.</p><input id="otp-code" class="otp" maxlength="6" placeholder="------" /><button id="to-profile" data-go="profile" disabled>Verify & Continue</button></section>
+        <section id="profile" class="screen page"><h1>Set up profile</h1><p>Add your details to start using Hatid.</p><label class="field">Full Name<input placeholder="Maria Santos" /></label><button data-go="permissions">Save Profile</button></section>
+        <section id="permissions" class="screen page"><strong class="brand">Hatid</strong><h1>Let's keep every ride safe.</h1><p>Enable required permissions so Hatid can locate you, notify you, and protect your trip.</p><div class="row">📍 <span><b>Location</b><small>Needed for pickup routing</small></span></div><div class="row">🔔 <span><b>Notifications</b><small>Ride updates and safety alerts</small></span></div><button data-go="home">Allow Required Permissions</button></section>
+        <section id="home" class="screen app"><header><div class="avatar">MS</div><b>Hi, Maria</b><span>🔔</span></header><div class="content"><h1>Saan ang punta?</h1><button class="search" data-go="search">🔎 <span>Where to?</span><em>Now</em></button><div class="grid"><button>🚘<span>Ride</span></button><button>🏍️<span>Moto</span></button><button>🚐<span>XL</span></button><button>📦<span>Padala</span></button></div><button class="wallet" data-go="wallet"><span>Hatid Wallet</span><b>₱1,250.00</b><em>Linked GCash</em></button><h3>Recent Places</h3><button class="place" data-go="choose">💼 <b>Work</b><small>BGC Corporate Center, Taguig</small></button></div></section>
+        <section id="search" class="screen app"><header><button data-go="home">←</button><b>Set destination</b></header><div class="content"><input value="Current Location" readonly /><input placeholder="Where to?" /><button class="place" data-go="choose">🕘 <b>Ayala Triangle Gardens</b><small>Paseo de Roxas, Makati City</small></button></div></section>
+        <section id="choose" class="screen app map-page"><div class="map"><button data-go="search">←</button></div><div class="sheet"><button class="ride selected" data-ride="Car">🚘 <b>Hatid Car</b><small>3 mins • 4 seats</small><strong>₱212.00</strong></button><button class="ride" data-ride="Moto">🏍️ <b>Hatid Moto</b><small>1 min • 1 seat</small><strong>₱138.00</strong></button><p>💳 Hatid Wallet <span>₱1,250</span></p><button id="confirm" data-go="active">Confirm Car</button></div></section>
+        <section id="active" class="screen app map-page"><div class="status"><b>Driver is arriving</b><span>2 mins</span><small>Please wait at the pickup point.</small></div><div class="map full"></div><div class="sheet"><p class="pin"><span>Your Ride PIN</span><b>4821</b></p><div class="driver"><div class="avatar">JC</div><span><b>Juan Dela Cruz</b><small>Toyota Vios • ABC-1234</small><em>LTFRB Verified</em></span><button>☎</button></div><div class="actions"><button>Share Trip</button><button>Emergency</button></div><button class="link" data-go="complete">End Demo Trip</button></div></section>
+        <section id="complete" class="screen page"><div class="success">✓</div><h1>You've arrived.</h1><p>Hope you enjoyed your ride with Juan.</p><div id="stars" class="stars"><button>☆</button><button>☆</button><button>☆</button><button>☆</button><button>☆</button></div><div id="tips" class="tips hide"><p>Add a tip?</p><button>₱20</button><button>₱50</button><button>₱100</button></div><button data-go="home">Submit & Return Home</button><button class="secondary" data-go="receipt">View Detailed Receipt</button></section>
+        <section id="receipt" class="screen app"><header><button data-go="home">←</button><b>Trip Receipt</b></header><div class="receipt"><p>Total Paid</p><h2>₱212.00</h2><small>June 11, 2026 • 10:45 AM</small><hr /><p><span>Base Fare</span><b>₱80.00</b></p><p><span>Distance</span><b>₱132.00</b></p><p><span>Paid via GCash</span><b>Successful</b></p></div></section>
+        <section id="trips" class="screen app"><header><b>Your Trips</b></header><div class="content"><div class="trip"><b>Hatid Car</b><small>June 11, 2026 • 10:45 AM</small><strong>₱212.00</strong><p>BGC Corporate Center → Ayala Triangle Gardens</p><button data-go="receipt">View Receipt</button></div></div></section>
+        <section id="wallet" class="screen app"><header><b>Wallet</b></header><div class="content"><div class="wallet-hero"><small>Available Balance</small><h2>₱1,250.00</h2><p>Monthly Limit: ₱100,000.00</p><button>Top Up</button><button>Send</button></div><div class="row">GCash <b>Linked</b></div><div class="row">Cash <b>✓</b></div><p class="note">Balances governed by secure backend ledger. Client is not authoritative for payments.</p></div></section>
+        <section id="safety" class="screen app"><header><b>Safety Center</b></header><div class="content"><div class="sos"><h2>Emergency SOS</h2><p>Call emergency services and share trip details.</p><button>Call 911</button><button>Notify trusted contacts</button></div><div class="menu">Share live trip →</div><div class="menu">Community Guidelines →</div></div></section>
+        <section id="account" class="screen app"><header><b>Account</b></header><div class="content"><div class="profile"><div class="avatar big">MS</div><span><h2>Maria Santos</h2><p>+63 968 184 1001</p><small>KYC Verified</small></span></div><div class="menu">Personal Information →</div><div class="menu">Verification & Limits →</div><div class="menu">Payment Methods →</div><button data-go="splash" class="logout">Log Out</button></div></section>
+        <nav id="nav" class="nav"><button data-go="home">Home</button><button data-go="trips">Trips</button><button data-go="wallet">Wallet</button><button data-go="safety">Safety</button><button data-go="account">Account</button></nav>
+      </section>
+    </main>
+    <script src="./app.js" defer></script>
+  </body>
+</html>
