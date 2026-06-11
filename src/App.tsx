@@ -60,6 +60,7 @@ export default function App() {
   const [tripStage, setTripStage] = useState<TripStage>('idle');
   const [modal, setModal] = useState<{ title: string; message: string } | null>(null);
   const [exitTarget, setExitTarget] = useState<Screen | null>(null);
+  const [toast, setToast] = useState<string | null>(null);
   const [rating, setRating] = useState(0);
   const [trustedContacts, setTrustedContacts] = useState<TrustedContact[]>([
     { name: 'Mom', phone: '+63 917 000 4100', alert: 'Live trip sharing enabled' },
@@ -90,6 +91,12 @@ export default function App() {
     window.addEventListener('popstate', onPopState);
     return () => window.removeEventListener('popstate', onPopState);
   }, []);
+
+  useEffect(() => {
+    if (!toast) return;
+    const timer = window.setTimeout(() => setToast(null), 2200);
+    return () => window.clearTimeout(timer);
+  }, [toast]);
 
   useEffect(() => {
     if (screen !== 'activeTrip') return;
@@ -123,6 +130,10 @@ export default function App() {
       setScreen(previous);
       return stack.slice(0, -1);
     });
+  }
+
+  function notify(message: string) {
+    setToast(message);
   }
 
   function open(title: string, message: string) {
@@ -166,11 +177,12 @@ export default function App() {
     setContactName('');
     setContactPhone('');
     setContactAlert(alertTypes[0]);
-    open('Trusted contact added', 'This contact is now available for live trip sharing and SOS alerts in the pilot preview.');
+    notify('Trusted contact added');
   }
 
   function createTicket() {
     setTicketCreated(true);
+    notify('Support ticket HTD-SUP-1028 created');
     open('Support ticket created', `Reference HTD-SUP-1028 created for ${selectedIssue}. Trip context, route, driver, plate, and receipt were attached in the preview.`);
   }
 
@@ -181,7 +193,7 @@ export default function App() {
       {screen === 'otp' && <Otp go={go} back={back} otp={otp} setOtp={setOtp} valid={otpValid} phone={normalizedPhone} />}
       {screen === 'profile' && <Profile go={go} />}
       {screen === 'permissions' && <Permissions go={go} />}
-      {screen === 'home' && <Home go={go} open={open} />}
+      {screen === 'home' && <Home go={go} open={open} notify={notify} />}
       {screen === 'search' && <Search go={go} back={back} />}
       {screen === 'choose' && <ChooseRide back={back} selectedRide={selectedRide} setSelectedRide={setSelectedRide} pickupInstruction={pickupInstruction} setPickupInstruction={setPickupInstruction} paymentMethod={paymentMethod} setPaymentMethod={setPaymentMethod} beginTrip={beginTrip} />}
       {screen === 'activeTrip' && <ActiveTrip go={go} open={open} tripStage={tripStage} selectedRide={selectedRide} pickupInstruction={pickupInstruction} paymentMethod={paymentMethod} nextTripStep={nextTripStep} cancelTrip={cancelTrip} />}
@@ -192,12 +204,13 @@ export default function App() {
       {screen === 'safety' && <Safety go={go} open={open} trustedContacts={trustedContacts} />}
       {screen === 'account' && <Account go={go} open={open} />}
       {screen === 'trustedContacts' && <TrustedContacts back={back} contacts={trustedContacts} name={contactName} phone={contactPhone} alert={contactAlert} setName={setContactName} setPhone={setContactPhone} setAlert={setContactAlert} addContact={addTrustedContact} />}
-      {screen === 'shareTrip' && <ShareTrip back={back} contacts={trustedContacts} status={shareStatus} setStatus={setShareStatus} open={open} />}
+      {screen === 'shareTrip' && <ShareTrip back={back} contacts={trustedContacts} status={shareStatus} setStatus={setShareStatus} open={open} notify={notify} />}
       {screen === 'reportIssue' && <ReportIssue back={back} selectedIssue={selectedIssue} setSelectedIssue={setSelectedIssue} details={issueDetails} setDetails={setIssueDetails} ticketCreated={ticketCreated} createTicket={createTicket} />}
       {screen === 'driverVerification' && <DriverVerification back={back} />}
       {screen === 'terms' && <Terms back={back} />}
       {screen === 'safetyGuide' && <SafetyGuide back={back} />}
       <BottomNav current={screen} go={go} />
+      {toast && <Toast message={toast} />}
       {modal && <SafetyModal title={modal.title} message={modal.message} close={() => setModal(null)} />}
       {exitTarget && <ExitTripModal keepRide={() => setExitTarget(null)} shareTrip={() => { setExitTarget(null); pushScreen('shareTrip'); }} cancelAndLeave={confirmExitTrip} />}
     </PhoneShell>
@@ -209,7 +222,7 @@ function Splash({ go }: { go: (screen: Screen) => void }) {
 }
 
 function Login({ go, back, phone, setPhone, phoneValid }: { go: (screen: Screen) => void; back: () => void; phone: string; setPhone: (value: string) => void; phoneValid: boolean }) {
-  return <section className="screen auth active"><button className="ghost back" onClick={back}>←</button><h1>Enter your mobile number</h1><p>Use a Philippine mobile number. We accept 09XXXXXXXXX or 9XXXXXXXXX.</p><label className="phone-field"><span>🇵🇭 +63</span><input inputMode="numeric" autoComplete="tel" placeholder="9XX XXX XXXX" value={formatPhone(normalizePhone(phone))} onChange={(event) => setPhone(event.target.value)} /></label><p className={phone && !phoneValid ? 'hint error' : 'hint'}>{phone && !phoneValid ? 'Enter a valid PH mobile number starting with 9.' : 'Protected by Hatid Safety • PH mobile only • Data Privacy compliant'}</p><div className="trust-strip"><span>LTFRB-aware</span><span>Verified drivers</span><span>Emergency contacts</span></div><button className="primary bottom" disabled={!phoneValid} onClick={() => go('otp')}>Continue</button></section>;
+  return <section className="screen auth active"><button className="ghost back" onClick={back}>←</button><h1>Enter your mobile number</h1><p>Use a Philippine mobile number. We accept 09XXXXXXXXX or 9XXXXXXXXX.</p><label className="phone-field"><span>PH +63</span><input inputMode="numeric" autoComplete="tel" placeholder="9XX XXX XXXX" value={formatPhone(normalizePhone(phone))} onChange={(event) => setPhone(event.target.value)} /></label><p className={phone && !phoneValid ? 'hint error' : 'hint'}>{phone && !phoneValid ? 'Enter a valid PH mobile number starting with 9.' : 'Protected by Hatid Safety • PH mobile only • Data Privacy compliant'}</p><div className="trust-strip"><span>LTFRB-aware</span><span>Verified drivers</span><span>Emergency contacts</span></div><button className="primary bottom" disabled={!phoneValid} onClick={() => go('otp')}>Continue</button></section>;
 }
 
 function Otp({ go, back, otp, setOtp, valid, phone }: { go: (screen: Screen) => void; back: () => void; otp: string; setOtp: (value: string) => void; valid: boolean; phone: string }) {
@@ -221,11 +234,11 @@ function Profile({ go }: { go: (screen: Screen) => void }) {
 }
 
 function Permissions({ go }: { go: (screen: Screen) => void }) {
-  return <section className="screen auth active"><div className="wordmark blue">Hatid</div><h1>Let's keep every ride safe.</h1><p>You can change permissions anytime in settings.</p><div className="permission-card"><b>📍 Location</b><span>Used only for booking, pickup routing, and active trips.</span></div><div className="permission-card"><b>🔔 Notifications</b><span>Driver arrival, safety alerts, receipts, and trusted contact updates.</span></div><button className="primary bottom" onClick={() => go('home')}>Allow Required Permissions</button></section>;
+  return <section className="screen auth active"><div className="wordmark blue">Hatid</div><h1>Let's keep every ride safe.</h1><p>You can change permissions anytime in settings.</p><div className="permission-card"><b><Glyph code="L" /> Location</b><span>Used only for booking, pickup routing, and active trips.</span></div><div className="permission-card"><b><Glyph code="N" /> Notifications</b><span>Driver arrival, safety alerts, receipts, and trusted contact updates.</span></div><button className="primary bottom" onClick={() => go('home')}>Allow Required Permissions</button></section>;
 }
 
-function Home({ go, open }: { go: (screen: Screen) => void; open: (title: string, message: string) => void }) {
-  return <section className="screen app-screen active"><Topbar title="Good evening, Maria" subtitle="Pickup: Salcedo Village entrance" action={() => open('Notifications', 'Production will connect push notifications for driver arrival, receipts, and trusted contact alerts.')} /><div className="content scroll"><div className="live-card"><span>42 drivers nearby</span><b>3 min average pickup</b></div><div className="mini-map" onClick={() => go('choose')}><RouteMap stage="idle" compact /><div><b>Pickup accuracy: High</b><span>Meet at lobby entrance • 18 drivers available</span></div></div><h1>Saan ang punta?</h1><button className="search-box" onClick={() => go('search')}><span>🔎 Where to?</span><em>Now</em></button><div className="status-grid">{serviceStatus.map(([name, status, count]) => <div key={name}><b>{name}</b><span>{status}</span><small>{count}</small></div>)}</div><div className="promo"><b>Airport rides now available</b><span>Makati → NAIA Terminal 3 • 28–35 min</span></div><button className="balance-card" onClick={() => go('balance')}><span>Hatid Balance</span><b>₱1,250.00</b><small>Ride credits linked to GCash, Maya, Cash</small></button><h3>Saved places</h3><div className="quick-grid"><button onClick={() => go('choose')}>🏠 Home</button><button onClick={() => go('choose')}>💼 Work</button><button onClick={() => open('Saved places', 'Saved place creation is ready as a placeholder flow.')}>＋ Add place</button></div><h3>Recent trip</h3><button className="list-row" onClick={() => go('receipt')}><b>Salcedo Village → BGC High Street</b><small>Completed • ₱212.00 • Rebook available</small></button></div></section>;
+function Home({ go, open, notify }: { go: (screen: Screen) => void; open: (title: string, message: string) => void; notify: (message: string) => void }) {
+  return <section className="screen app-screen active"><Topbar title="Good evening, Maria" subtitle="Pickup: Salcedo Village entrance" action={() => notify('No new notifications')} /><div className="content scroll"><div className="live-card"><span>42 drivers nearby</span><b>3 min average pickup</b></div><div className="mini-map" onClick={() => go('choose')}><RouteMap stage="idle" compact /><div><b>Pickup accuracy: High</b><span>Meet at lobby entrance • 18 drivers available</span></div></div><h1>Saan ang punta?</h1><button className="search-box" onClick={() => go('search')}><span className="inline-glyph-row"><Glyph code="Q" /> Where to?</span><em>Now</em></button><div className="status-grid premium-grid">{serviceStatus.map(([name, status, count]) => <div key={name}><b>{name}</b><span>{status}</span><small>{count}</small></div>)}</div><div className="promo"><b>Airport rides now available</b><span>Makati → NAIA Terminal 3 • 28–35 min</span></div><button className="balance-card" onClick={() => go('balance')}><span>Hatid Balance</span><b>₱1,250.00</b><small>Ride credits linked to GCash, Maya, Cash</small></button><h3>Saved places</h3><div className="quick-grid"><button onClick={() => go('choose')}><Glyph code="H" /> Home</button><button onClick={() => go('choose')}><Glyph code="W" /> Work</button><button onClick={() => open('Saved places', 'Saved place creation is ready as a placeholder flow.')}><Glyph code="+" /> Add place</button></div><h3>Recent trip</h3><button className="list-row" onClick={() => go('receipt')}><b>Salcedo Village → BGC High Street</b><small>Completed • ₱212.00 • Rebook available</small></button></div></section>;
 }
 
 function Search({ go, back }: { go: (screen: Screen) => void; back: () => void }) {
@@ -262,16 +275,16 @@ function Safety({ go, open, trustedContacts }: { go: (screen: Screen) => void; o
 }
 
 function Account({ go, open }: { go: (screen: Screen) => void; open: (title: string, message: string) => void }) {
-  return <section className="screen app-screen active"><Topbar title="Account" /><div className="content scroll"><div className="profile-card"><div className="driver-photo-v2">MS</div><div><h2>Maria Santos</h2><p>+63 968 184 1001</p><span>KYC Verified</span></div></div><button className="list-row" onClick={() => open('Edit profile', 'Edit profile flow placeholder.')}>Edit profile</button><button className="list-row" onClick={() => go('trustedContacts')}>Trusted contacts</button><button className="list-row" onClick={() => go('terms')}>Terms & Privacy</button><button className="list-row" onClick={() => open('Delete account', 'Production will require identity confirmation and data retention notice.')}>Delete account</button><button className="list-row" onClick={() => open('App version', 'Hatid preview v0.7.0 phase 4 safety actions.')}>App version</button></div></section>;
+  return <section className="screen app-screen active"><Topbar title="Account" /><div className="content scroll"><div className="profile-card"><div className="driver-photo-v2">MS</div><div><h2>Maria Santos</h2><p>+63 968 184 1001</p><span>KYC Verified</span></div></div><button className="list-row" onClick={() => open('Edit profile', 'Edit profile flow placeholder.')}>Edit profile</button><button className="list-row" onClick={() => go('trustedContacts')}>Trusted contacts</button><button className="list-row" onClick={() => go('terms')}>Terms & Privacy</button><button className="list-row" onClick={() => open('Delete account', 'Production will require identity confirmation and data retention notice.')}>Delete account</button><button className="list-row" onClick={() => open('App version', 'Hatid preview v0.8.0 phase 5 premium visual pass.')}>App version</button></div></section>;
 }
 
 function TrustedContacts({ back, contacts, name, phone, alert, setName, setPhone, setAlert, addContact }: { back: () => void; contacts: TrustedContact[]; name: string; phone: string; alert: string; setName: (value: string) => void; setPhone: (value: string) => void; setAlert: (value: string) => void; addContact: () => void }) {
   return <section className="screen app-screen active"><Topbar title="Trusted contacts" back={back} /><div className="content scroll"><p className="note">Contacts receive trip links only when you choose to share or trigger SOS.</p>{contacts.map((contact) => <div className="contact-card" key={`${contact.name}-${contact.phone}`}><b>{contact.name}</b><span>{contact.phone}</span><em>{contact.alert}</em></div>)}<section className="booking-card"><div className="section-head"><b>Add trusted contact</b><span>Preview only</span></div><label className="field">Name<input value={name} onChange={(event) => setName(event.target.value)} placeholder="Ate, Mom, Brother" /></label><label className="field">Phone<input value={phone} onChange={(event) => setPhone(event.target.value)} placeholder="+63 9XX XXX XXXX" /></label><div className="choice-row">{alertTypes.map((item) => <button key={item} className={alert === item ? 'choice active' : 'choice'} onClick={() => setAlert(item)}>{item}</button>)}</div><button className="primary" disabled={!name.trim() || !phone.trim()} onClick={addContact}>Add trusted contact</button></section></div></section>;
 }
 
-function ShareTrip({ back, contacts, status, setStatus, open }: { back: () => void; contacts: TrustedContact[]; status: ShareStatus; setStatus: (value: ShareStatus) => void; open: (title: string, message: string) => void }) {
+function ShareTrip({ back, contacts, status, setStatus, open, notify }: { back: () => void; contacts: TrustedContact[]; status: ShareStatus; setStatus: (value: ShareStatus) => void; open: (title: string, message: string) => void; notify: (message: string) => void }) {
   const link = 'hatid.ph/t/HTD-98213-AB29';
-  return <section className="screen app-screen active"><Topbar title="Share live trip" back={back} /><div className="content scroll share-trip-content"><RouteMap stage="arriving" compact /><div className="share-card"><b>Live trip preview</b><span>Maria is riding with {driver.name} in {driver.color} {driver.vehicle} {driver.plate}.</span><small>Pickup: {places.pickupDetail} • Dropoff: {places.destinationDetail} • ETA 18 min</small></div>{status !== 'idle' && <div className="note"><b>{status === 'generated' ? 'Secure link generated' : status === 'copied' ? 'Secure link copied' : 'Trip sent to trusted contacts'}</b><br />{link}</div>}<button className="primary" onClick={() => { setStatus('generated'); open('Secure trip link generated', 'A secure preview link was generated for this active trip.'); }}>Generate secure trip link</button><button className="secondary" onClick={() => { setStatus('copied'); open('Trip link copied', link); }}>Copy secure link</button><button className="secondary" onClick={() => { setStatus('sent'); open('Trip shared', `Sent to ${contacts.map((c) => c.name).join(', ')}.`); }}>Send to trusted contacts</button><h3>Recipients</h3>{contacts.map((contact) => <div className="contact-card" key={contact.phone}><b>{contact.name}</b><span>{contact.phone}</span><em>{contact.alert}</em></div>)}</div></section>;
+  return <section className="screen app-screen active"><Topbar title="Share live trip" back={back} /><div className="content scroll share-trip-content"><RouteMap stage="arriving" compact /><div className="share-card"><b>Live trip preview</b><span>Maria is riding with {driver.name} in {driver.color} {driver.vehicle} {driver.plate}.</span><small>Pickup: {places.pickupDetail} • Dropoff: {places.destinationDetail} • ETA 18 min</small></div>{status !== 'idle' && <div className="note"><b>{status === 'generated' ? 'Secure link generated' : status === 'copied' ? 'Secure link copied' : 'Trip sent to trusted contacts'}</b><br />{link}</div>}<button className="primary" onClick={() => { setStatus('generated'); notify('Secure trip link generated'); }}>Generate secure trip link</button><button className="secondary" onClick={() => { setStatus('copied'); notify('Trip link copied'); }}>Copy secure link</button><button className="secondary" onClick={() => { setStatus('sent'); open('Trip shared', `Sent to ${contacts.map((c) => c.name).join(', ')}.`); }}>Send to trusted contacts</button><h3>Recipients</h3>{contacts.map((contact) => <div className="contact-card" key={contact.phone}><b>{contact.name}</b><span>{contact.phone}</span><em>{contact.alert}</em></div>)}</div></section>;
 }
 
 function ReportIssue({ back, selectedIssue, setSelectedIssue, details, setDetails, ticketCreated, createTicket }: { back: () => void; selectedIssue: string; setSelectedIssue: (value: string) => void; details: string; setDetails: (value: string) => void; ticketCreated: boolean; createTicket: () => void }) {
@@ -291,12 +304,20 @@ function SafetyGuide({ back }: { back: () => void }) {
 }
 
 function Topbar({ title, subtitle, back, action }: { title: string; subtitle?: string; back?: () => void; action?: () => void }) {
-  return <header className="topbar">{back && <button className="topbar-back" onClick={back} aria-label="Go back">←</button>}<div>{subtitle && <small>{subtitle}</small>}<b>{title}</b></div>{action && <button className="icon-btn" onClick={action}>🔔</button>}</header>;
+  return <header className="topbar">{back && <button className="topbar-back" onClick={back} aria-label="Go back">←</button>}<div>{subtitle && <small>{subtitle}</small>}<b>{title}</b></div>{action && <button className="icon-btn" onClick={action}><Glyph code="N" /></button>}</header>;
+}
+
+function Glyph({ code }: { code: string }) {
+  return <i className="mini-glyph" aria-hidden="true">{code}</i>;
 }
 
 function RideGlyph({ kind }: { kind: string }) {
   const label = kind === 'moto' ? 'M' : kind === 'xl' ? 'XL' : 'C';
   return <span className={`ride-glyph ${kind}`} aria-hidden="true">{label}</span>;
+}
+
+function Toast({ message }: { message: string }) {
+  return <div className="toast elevated" role="status"><span>Hatid</span><b>{message}</b></div>;
 }
 
 function ExitTripModal({ keepRide, shareTrip, cancelAndLeave }: { keepRide: () => void; shareTrip: () => void; cancelAndLeave: () => void }) {
