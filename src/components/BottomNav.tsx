@@ -9,7 +9,7 @@ const items: Array<[Screen, string, string]> = [
 ];
 
 export function BottomNav({ current, go }: { current: Screen; go: (screen: Screen) => void }) {
-  const visible = ['home', 'trips', 'balance', 'safety', 'account'].includes(current);
+  const visible = ['home', 'trips', 'balance', 'safety', 'account', 'completed', 'receipt'].includes(current);
   return (
     <nav className={`bottom-nav ${visible ? 'visible' : ''}`}>
       {items.map(([screen, glyph, label]) => (
