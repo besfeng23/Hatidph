@@ -35,10 +35,10 @@ type ShareStatus = 'idle' | 'generated' | 'copied' | 'sent';
 
 const stateCopy: Record<TripStage, { title: string; detail: string; cta: string }> = {
   idle: { title: 'Ready to book', detail: 'Choose a ride to begin the Makati/BGC pilot simulation.', cta: 'Start search' },
-  searching: { title: 'Searching nearby drivers', detail: 'Checking driver availability and matching plate-verified vehicles around Salcedo.', cta: 'Assign driver' },
-  assigned: { title: 'Driver assigned', detail: `${driver.name} accepted your booking. Plate ${driver.plate} is ready for match check.`, cta: 'Driver arriving' },
-  arriving: { title: 'Kuya Juan is arriving', detail: `${driver.name} is ${driver.distance}. Meet at Salcedo Village lobby entrance.`, cta: 'Driver arrived' },
-  arrived: { title: 'Driver has arrived', detail: `Confirm ${driver.plate} before boarding. Share your PIN only inside the correct vehicle.`, cta: 'Start trip demo' },
+  searching: { title: 'Matching you with nearby drivers', detail: 'Checking route fit, driver availability, and plate-verified vehicles around Salcedo.', cta: 'Keep matching' },
+  assigned: { title: 'Juan accepted your booking', detail: `${driver.name} accepted your ride. Keep ${driver.plate} and Ride PIN 4821 visible for boarding.`, cta: 'Track approach' },
+  arriving: { title: 'Driver approaching pickup', detail: `${driver.name} is ${driver.distance}. Meet only at ${places.pickupDetail}.`, cta: 'Driver arrived' },
+  arrived: { title: 'Driver is at pickup', detail: `Confirm ${driver.plate}, vehicle color, and driver name before sharing your PIN.`, cta: 'Start trip demo' },
   in_trip: { title: 'Trip in progress', detail: 'Live trip is shared with Mom. ETA 18 min via Ayala Ave toward BGC High Street.', cta: 'Arriving soon' },
   arriving_soon: { title: 'Arriving soon', detail: 'Prepare to exit safely at BGC High Street drop-off bay.', cta: 'Complete trip' },
   completed: { title: 'Trip completed', detail: 'You arrived safely. Review your receipt and rate the trip.', cta: 'View receipt' },
@@ -49,6 +49,14 @@ const activeTripSafeTargets: Screen[] = ['activeTrip', 'shareTrip', 'driverVerif
 const issueTypes = ['Safety concern', 'Wrong route', 'Payment issue', 'Driver behavior', 'Lost item', 'App problem'];
 const alertTypes = ['Live trip sharing enabled', 'SOS alerts enabled', 'Always ask first'];
 const feedbackOptions = ['Safe driving', 'Clean car', 'Polite driver', 'Fast pickup', 'Smooth route', 'Helpful driver'];
+const stageDelays: Partial<Record<TripStage, number>> = { searching: 3200, assigned: 2800, arriving: 3200 };
+const cancelCopy: Partial<Record<TripStage, { title: string; message: string; confirm: string }>> = {
+  searching: { title: 'Cancel driver search?', message: 'We are still matching you with nearby verified drivers. No driver has accepted yet.', confirm: 'Cancel search' },
+  assigned: { title: 'Cancel after driver accepted?', message: `${driver.name} already accepted your booking. Cancelling now would notify the driver and record the reason in production.`, confirm: 'Cancel ride' },
+  arriving: { title: 'Cancel while driver is approaching?', message: `${driver.name} is already on the way to ${places.pickupDetail}. Keep the ride open if you still plan to board.`, confirm: 'Cancel ride' },
+  arrived: { title: 'Driver is already there', message: `Only cancel if you cannot board or the vehicle details do not match ${driver.plate}.`, confirm: 'Cancel ride' },
+  in_trip: { title: 'End active trip?', message: 'This preview can cancel the trip, but a real app would route this to support because the passenger is already onboard.', confirm: 'End demo trip' },
+};
 
 export default function App() {
   const [screen, setScreen] = useState<Screen>('splash');
@@ -61,6 +69,7 @@ export default function App() {
   const [tripStage, setTripStage] = useState<TripStage>('idle');
   const [modal, setModal] = useState<{ title: string; message: string } | null>(null);
   const [exitTarget, setExitTarget] = useState<Screen | null>(null);
+  const [cancelPrompt, setCancelPrompt] = useState<TripStage | null>(null);
   const [toast, setToast] = useState<string | null>(null);
   const [rating, setRating] = useState(0);
   const [feedbackTags, setFeedbackTags] = useState<string[]>([]);
@@ -104,7 +113,8 @@ export default function App() {
     if (screen !== 'activeTrip') return;
     if (!['searching', 'assigned', 'arriving'].includes(tripStage)) return;
     const chain: Partial<Record<TripStage, TripStage>> = { searching: 'assigned', assigned: 'arriving', arriving: 'arrived' };
-    const timer = window.setTimeout(() => setTripStage(chain[tripStage] ?? tripStage), 2200);
+    const delay = stageDelays[tripStage] ?? 3000;
+    const timer = window.setTimeout(() => setTripStage(chain[tripStage] ?? tripStage), delay);
     return () => window.clearTimeout(timer);
   }, [screen, tripStage]);
 
@@ -161,8 +171,17 @@ export default function App() {
   }
 
   function cancelTrip() {
+    if (cancelCopy[tripStage]) {
+      setCancelPrompt(tripStage);
+      return;
+    }
+    finalizeCancelTrip();
+  }
+
+  function finalizeCancelTrip() {
     setTripStage('cancelled');
     setExitTarget(null);
+    setCancelPrompt(null);
     open('Trip cancelled', 'Demo cancellation captured. In production this would collect cancellation reason, pricing rules, and support escalation when needed.');
   }
 
@@ -249,6 +268,7 @@ export default function App() {
       <BottomNav current={screen} go={go} />
       {toast && <Toast message={toast} />}
       {modal && <SafetyModal title={modal.title} message={modal.message} close={() => setModal(null)} />}
+      {cancelPrompt && <CancelRideModal stage={cancelPrompt} keepRide={() => setCancelPrompt(null)} confirmCancel={finalizeCancelTrip} />}
       {exitTarget && <ExitTripModal keepRide={() => setExitTarget(null)} shareTrip={() => { setExitTarget(null); pushScreen('shareTrip'); }} cancelAndLeave={confirmExitTrip} />}
     </PhoneShell>
   );
@@ -312,7 +332,7 @@ function Safety({ go, open, trustedContacts }: { go: (screen: Screen) => void; o
 }
 
 function Account({ go, open }: { go: (screen: Screen) => void; open: (title: string, message: string) => void }) {
-  return <section className="screen app-screen active"><Topbar title="Account" /><div className="content scroll"><div className="profile-card"><div className="driver-photo-v2">MS</div><div><h2>Maria Santos</h2><p>+63 968 184 1001</p><span>KYC Verified</span></div></div><button className="list-row" onClick={() => open('Edit profile', 'Edit profile flow placeholder.')}>Edit profile</button><button className="list-row" onClick={() => go('trustedContacts')}>Trusted contacts</button><button className="list-row" onClick={() => go('terms')}>Terms & Privacy</button><button className="list-row" onClick={() => open('Delete account', 'Production will require identity confirmation and data retention notice.')}>Delete account</button><button className="list-row" onClick={() => open('App version', 'Hatid preview v0.8.1 phase 8A completed-trip loop.')}>App version</button></div></section>;
+  return <section className="screen app-screen active"><Topbar title="Account" /><div className="content scroll"><div className="profile-card"><div className="driver-photo-v2">MS</div><div><h2>Maria Santos</h2><p>+63 968 184 1001</p><span>KYC Verified</span></div></div><button className="list-row" onClick={() => open('Edit profile', 'Edit profile flow placeholder.')}>Edit profile</button><button className="list-row" onClick={() => go('trustedContacts')}>Trusted contacts</button><button className="list-row" onClick={() => go('terms')}>Terms & Privacy</button><button className="list-row" onClick={() => open('Delete account', 'Production will require identity confirmation and data retention notice.')}>Delete account</button><button className="list-row" onClick={() => open('App version', 'Hatid preview v0.8.1 phase 8B humanised trip flow.')}>App version</button></div></section>;
 }
 
 function TrustedContacts({ back, contacts, name, phone, alert, setName, setPhone, setAlert, addContact }: { back: () => void; contacts: TrustedContact[]; name: string; phone: string; alert: string; setName: (value: string) => void; setPhone: (value: string) => void; setAlert: (value: string) => void; addContact: () => void }) {
@@ -355,6 +375,11 @@ function RideGlyph({ kind }: { kind: string }) {
 
 function Toast({ message }: { message: string }) {
   return <div className="toast elevated" role="status"><span>Hatid</span><b>{message}</b></div>;
+}
+
+function CancelRideModal({ stage, keepRide, confirmCancel }: { stage: TripStage; keepRide: () => void; confirmCancel: () => void }) {
+  const copy = cancelCopy[stage] ?? { title: 'Cancel ride?', message: 'This will cancel the current demo ride.', confirm: 'Cancel ride' };
+  return <div className="modal" role="dialog" aria-modal="true"><div className="modal-card elevated cancel-modal"><h2>{copy.title}</h2><p>{copy.message}</p><div className="modal-actions"><button className="primary" onClick={keepRide}>Keep ride</button><button className="secondary danger" onClick={confirmCancel}>{copy.confirm}</button></div></div></div>;
 }
 
 function ExitTripModal({ keepRide, shareTrip, cancelAndLeave }: { keepRide: () => void; shareTrip: () => void; cancelAndLeave: () => void }) {
