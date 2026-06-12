@@ -10,6 +10,7 @@ const requiredFiles = [
   'src/lib/tripState.ts',
   'public/manifest.json',
   'docs/PRODUCTION_READINESS.md',
+  'docs/PHASE_STATUS.md',
   'docs/QA_CHECKLIST.md',
 ];
 
@@ -20,6 +21,8 @@ const requiredText = [
   ['src/App.tsx', 'Support ticket'],
   ['docs/PRODUCTION_READINESS.md', 'No real ride booking'],
   ['docs/PRODUCTION_READINESS.md', 'No real payment processing'],
+  ['docs/PHASE_STATUS.md', 'Phase 8A'],
+  ['docs/PHASE_STATUS.md', 'Known limitations'],
   ['public/manifest.json', 'Hatid - Premium Mobility'],
 ];
 
