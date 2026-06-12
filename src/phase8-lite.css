@@ -63,6 +63,13 @@
 .split-actions {
   grid-template-columns: repeat(2, minmax(0, 1fr));
   margin: 10px 0;
+  align-items: stretch;
+}
+
+.split-actions .primary,
+.split-actions .secondary {
+  min-height: 46px;
+  padding: 13px 12px;
 }
 
 .completion-actions,
@@ -83,9 +90,27 @@
   color: #dc2626 !important;
 }
 
+.modal {
+  backdrop-filter: blur(10px);
+  padding: 18px;
+}
+
 .modal-card {
   max-height: 82vh;
   overflow: auto;
+  border: 1px solid rgba(226, 232, 240, .95);
+  box-shadow: 0 24px 60px -24px rgba(15, 23, 42, .45);
+}
+
+.modal-card h2 {
+  margin: 0 0 8px;
+  font-size: 22px;
+  line-height: 1.08;
+  letter-spacing: -.035em;
+}
+
+.modal-card p {
+  margin: 0 0 16px;
 }
 
 .modal-card .list-row {
@@ -98,6 +123,7 @@
 .list-row.selected {
   border-color: rgba(0, 51, 204, .36);
   background: linear-gradient(135deg, #eff6ff, #ffffff);
+  box-shadow: 0 0 0 2px rgba(0, 51, 204, .06);
 }
 
 .cancel-modal p,
@@ -107,7 +133,101 @@
 }
 
 .contact-card .split-actions {
+  grid-template-columns: 1fr 1fr;
   margin-top: 10px;
+}
+
+.contact-card .secondary {
+  padding: 11px 10px;
+  border-radius: 12px;
+}
+
+.booking-card .field textarea {
+  width: 100%;
+  margin-top: 8px;
+  border: 1px solid #cbd5e1;
+  border-radius: 14px;
+  padding: 13px;
+  outline: 0;
+  resize: vertical;
+  color: #0f172a;
+  background: #fff;
+}
+
+.choice-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.choice-row .choice {
+  border-radius: 999px;
+  padding: 9px 11px;
+  font-size: 11px;
+  color: #475569;
+}
+
+.quote-hero {
+  display: grid;
+  grid-template-columns: 1.2fr .8fr;
+  gap: 10px;
+  margin: 8px 0 10px;
+}
+
+.quote-hero > div {
+  display: grid;
+  gap: 3px;
+  padding: 13px;
+  border: 1px solid #e2e8f0;
+  border-radius: 16px;
+  background: #fff;
+}
+
+.quote-hero span {
+  font-size: 11px;
+  color: #64748b;
+  font-weight: 800;
+}
+
+.quote-hero b {
+  font-size: 18px;
+}
+
+.quote-hero small {
+  font-size: 11px;
+  color: #64748b;
+}
+
+.trip-facts {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 8px;
+  margin-bottom: 12px;
+}
+
+.trip-facts div {
+  display: grid;
+  gap: 3px;
+  padding: 10px;
+  border: 1px solid #e2e8f0;
+  border-radius: 12px;
+  background: #fff;
+}
+
+.trip-facts span {
+  font-size: 11px;
+  color: #64748b;
+}
+
+.fare-card div {
+  display: flex;
+  justify-content: space-between;
+  gap: 14px;
+}
+
+.fare-card .promo-line {
+  color: #0033cc;
+  font-weight: 900;
 }
 
 .receipt.elevated {
@@ -117,6 +237,36 @@
 .policy-note,
 .note {
   line-height: 1.5;
+}
+
+.mini-glyph {
+  font-style: normal;
+  display: inline-grid;
+  place-items: center;
+  height: 18px;
+  min-width: 18px;
+  border-radius: 999px;
+  background: #eff6ff;
+  color: #0033cc;
+  border: 1px solid #dbeafe;
+  font-size: 10px;
+  font-weight: 900;
+}
+
+.inline-glyph-row {
+  display: inline-flex;
+  gap: 8px;
+  align-items: center;
+}
+
+.topbar-back {
+  height: 38px;
+  width: 38px;
+  border-radius: 50%;
+  border: 1px solid #e2e8f0;
+  background: #f8fafc;
+  color: #0f172a;
+  font-weight: 900;
 }
 
 .toast.elevated {
@@ -137,7 +287,9 @@
   }
 
   .phase8-feedback,
-  .split-actions {
+  .split-actions,
+  .quote-hero,
+  .trip-facts {
     grid-template-columns: 1fr;
   }
 
@@ -145,7 +297,12 @@
     padding-bottom: 112px;
   }
 
+  .modal {
+    padding: 14px;
+  }
+
   .modal-card {
     max-height: 86vh;
+    border-radius: 22px;
   }
 }
