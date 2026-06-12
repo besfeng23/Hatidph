@@ -1,0 +1,23 @@
+.modal{backdrop-filter:blur(10px);background:rgba(15,23,42,.36)}
+.modal-card{border:1px solid rgba(148,163,184,.28);box-shadow:0 28px 70px rgba(15,23,42,.22);max-width:340px}
+.modal-card h2{letter-spacing:-.03em;margin-bottom:8px}
+.modal-card p{color:#475569;line-height:1.55}
+.modal-actions{display:grid;gap:10px;margin-top:16px}
+.modal-actions .primary,.modal-actions .secondary{width:100%}
+.cancel-modal .danger,.modal-card .danger{border-color:#fecaca;color:#b91c1c;background:#fff5f5}
+.split-actions{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin:12px 0}
+.split-actions .secondary{min-height:44px;border-radius:16px;font-weight:850}
+.quote-hero,.fare-intel,.booking-card,.contact-card,.receipt{border:1px solid rgba(148,163,184,.22);box-shadow:0 14px 36px rgba(15,23,42,.06)}
+.quote-hero{gap:12px}
+.fare-intel{background:linear-gradient(180deg,#fff,#f8fbff)}
+.list-row.selected{border-color:#0033cc;background:#eff6ff;color:#0f172a}
+.list-row.selected small{color:#1d4ed8}
+.contact-card{border-radius:22px;background:#fff;padding:14px}
+.contact-card .split-actions{margin:12px 0 0}
+.trip-facts{gap:8px}
+.trip-facts div{border:1px solid rgba(148,163,184,.2);border-radius:16px;background:#fff;padding:10px}
+.receipt{border-radius:28px}
+.receipt-actions,.completion-actions{gap:10px}
+.phase8-feedback button{border-radius:999px;min-height:40px}
+.toast{border:1px solid rgba(148,163,184,.28)}
+@media(max-width:420px){.split-actions{grid-template-columns:1fr}.modal-card{max-width:calc(100vw - 44px)}.quote-hero{grid-template-columns:1fr}.receipt-actions,.completion-actions{padding-bottom:96px}}
