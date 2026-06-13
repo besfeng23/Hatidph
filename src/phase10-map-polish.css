@@ -1,0 +1,26 @@
+.svg-map{position:relative;overflow:hidden;border:1px solid rgba(148,163,184,.24);background:linear-gradient(180deg,#f8fbff,#eef4ff);box-shadow:inset 0 1px 0 rgba(255,255,255,.8),0 16px 42px rgba(15,23,42,.08)}
+.svg-map svg{display:block;width:100%;height:auto}
+.svg-map .district{fill:rgba(255,255,255,.72);stroke:rgba(148,163,184,.28);stroke-width:1.2}
+.svg-map .road{fill:none;stroke:#cbd5e1;stroke-width:12;stroke-linecap:round;opacity:.86}
+.svg-map .road.major{stroke:#94a3b8;stroke-width:18;opacity:.7}
+.svg-map .traffic{fill:none;stroke-linecap:round;stroke-width:7;opacity:.92}
+.svg-map .traffic.light{stroke:#22c55e}
+.svg-map .traffic.moderate{stroke:#f59e0b}
+.svg-map .route.shadow{fill:none;stroke:rgba(15,23,42,.14);stroke-width:18;stroke-linecap:round}
+.svg-map .route{fill:none;stroke:#0033cc;stroke-width:9;stroke-linecap:round;stroke-dasharray:10 12}
+.svg-map .route-progress{fill:none;stroke:#2563eb;stroke-width:13;stroke-linecap:round;stroke-dasharray:260 520;filter:drop-shadow(0 6px 10px rgba(37,99,235,.2))}
+.svg-map .search-dots circle{fill:#0033cc;opacity:.18;animation:mapPulse 1.8s ease-in-out infinite}
+.svg-map .search-dots circle:nth-child(2){animation-delay:.18s}.svg-map .search-dots circle:nth-child(3){animation-delay:.34s}
+.svg-map .pin.pickup{fill:#0033cc;stroke:#fff;stroke-width:5}
+.svg-map .pin.destination{fill:#0f172a;stroke:#fff;stroke-width:5}
+.svg-map .accuracy-ring{fill:none;stroke:#0033cc;stroke-width:3;opacity:.22;animation:accuracyPulse 2.4s ease-in-out infinite}
+.svg-map .driver-dot{transition:transform .8s cubic-bezier(.22,1,.36,1);filter:drop-shadow(0 10px 18px rgba(15,23,42,.24))}
+.svg-map .driver-dot circle{fill:#fff;stroke:#0033cc;stroke-width:5}
+.svg-map .driver-dot path{fill:#0033cc}.svg-map .driver-dot circle:not(:first-child){fill:#0f172a;stroke:none}
+.svg-map .map-card rect{fill:rgba(255,255,255,.92);stroke:rgba(148,163,184,.32);stroke-width:1.4}
+.svg-map .map-card-title{font-size:18px;font-weight:900;fill:#0f172a;letter-spacing:-.02em}.svg-map .map-card-meta{font-size:13px;font-weight:800;fill:#334155}.svg-map .map-card-meet{font-size:12px;font-weight:700;fill:#64748b}
+.svg-map .label{fill:#94a3b8;font-size:12px;font-weight:900;letter-spacing:.16em}.svg-map .road-label{fill:#94a3b8;font-size:11px;font-weight:800;letter-spacing:.08em}.svg-map .pin-label{fill:#334155;font-size:12px;font-weight:900}
+.svg-map.compact .map-card{transform:scale(.86);transform-origin:22px 22px}.svg-map.compact .label,.svg-map.compact .road-label,.svg-map.compact .pin-label{opacity:.72}
+@keyframes mapPulse{0%,100%{transform:scale(1);opacity:.16}50%{transform:scale(1.25);opacity:.34}}
+@keyframes accuracyPulse{0%,100%{opacity:.16;stroke-width:3}50%{opacity:.32;stroke-width:5}}
+@media(max-width:420px){.svg-map .map-card-title{font-size:16px}.svg-map .map-card-meta{font-size:12px}.svg-map .map-card-meet{font-size:11px}}
