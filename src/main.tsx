@@ -9,5 +9,6 @@ import './phase5-lite.css';
 import './phase8-lite.css';
 import './phase10-polish.css';
 import './phase10-map-polish.css';
+import './phase10-native-feel.css';
 
 ReactDOM.createRoot(document.getElementById('root')!).render(<React.StrictMode><App /></React.StrictMode>);
